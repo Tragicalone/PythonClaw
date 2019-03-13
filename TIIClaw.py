@@ -27,12 +27,12 @@ StartTime = datetime.datetime.now()
 ChromeOptions = WebDriver.ChromeOptions()
 ChromeOptions.add_experimental_option("prefs", {"plugins.plugins_list": [{"enabled": False, "name": "Chrome PDF Viewer"}], "download.default_directory": DownloadPath})
 
-FileError = open("Error.log", mode="w", encoding="UTF-8")
+FileError = open("TIIClawError.log", mode="w", encoding="UTF-8")
 FileError.close()
 DownloadTable = pandas.read_csv(DownloadPath + "\\DLHistory.csv", encoding="utf_8_sig", quoting=1, dtype=numpy.str)
 DownloadTable.set_index("TIISerial", inplace=True, verify_integrity=True)
 
-ChromeDriver = WebDriver.Chrome("chromedriver.exe", options=ChromeOptions)
+ChromeDriver = WebDriver.Chrome("chromedriver_TII.exe", options=ChromeOptions)
 ChromeDriver.maximize_window()
 ChromeDriver.implicitly_wait(5)
 ChromeDriver.get("http://insprod.tii.org.tw/database/insurance/query.asp")
@@ -42,7 +42,7 @@ CompanyList = [option.text.replace("-", "_") for option in CompanySelect.options
 
 for IndexCompany, CompanyName in enumerate(CompanyList):
     # 篩選壽險
-    if int(CompanyName[0:3]) < 257:
+    if int(CompanyName[0:3]) < 200:
         continue
     # 篩選壽險
     if not os.path.exists(DownloadPath + "\\" + CompanyName):
@@ -113,7 +113,7 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
             # 下載當頁所有商品
             for [ProductName, LaunchDate, CloseDate, TIISerial, ProductURL] in ProductNameURLList:
                 # 該 TIISerial 已下載
-                if TIISerial in DownloadTable.T:
+                if TIISerial in DownloadTable.index:
                     Company = DownloadTable.loc[TIISerial]
                     os.rename(DownloadPath + "\\" + CompanyName + "\\" + TIISerial + "_" + Company.values[1][:20] + "_" + Company.values[2] + "_" + Company.values[3] + ".pdf", DownloadPath + "\\" + CompanyName + "\\" + TIISerial + "_" + ProductName[:20] + "_" + LaunchDate + "_" + CloseDate + ".pdf")
                     DownloadTable.loc[TIISerial] = [CompanyName, ProductName, LaunchDate, CloseDate]
@@ -133,14 +133,14 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                 try:
                     ProvisionTag = ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td/table[3]/tbody/tr/td/table[1]/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[19]/td/table/tbody/tr/td/a")
                 except Exception as exception:
-                    with open("Error.log", mode="a", encoding="UTF-8") as FileError:
+                    with open("TIIClawError.log", mode="a", encoding="UTF-8") as FileError:
                         FileError.write("無條款 " + CompanyName + "\\" + ProductName + "\n")
 
                 if ProvisionTag:
                     ProvisionFileName = ProvisionTag.text
                     ProvisionTag.click()
                     if len(ChromeDriver.find_elements(WebBy.By.ID, "printContext")) == 0:
-                        with open("Error.log", mode="a", encoding="UTF-8") as FileError:
+                        with open("TIIClawError.log", mode="a", encoding="UTF-8") as FileError:
                             FileError.write("無連結 " + CompanyName + "\\" + ProductName + "\n")
                         continue
                     ProvisionFileExists = False
@@ -152,11 +152,13 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                             DownloadTable.loc[TIISerial] = [CompanyName, ProductName, LaunchDate, CloseDate]
                             break
                     if not ProvisionFileExists:
-                        with open("Error.log", mode="a", encoding="UTF-8") as FileError:
+                        with open("TIIClawError.log", mode="a", encoding="UTF-8") as FileError:
                             FileError.write("下載失敗 " + CompanyName + "\\" + ProductName + ".pdf\n")
                 # 下載處理
                 time.sleep(0.1)
             # 下載當頁所有商品
+            DownloadTable.sort_index(inplace=True)
+            DownloadTable.to_csv("DLHistory.csv", encoding="utf_8_sig", quoting=1)
             DownloadTable.to_csv(DownloadPath + "\\DLHistory.csv", encoding="utf_8_sig", quoting=1)
             print(CompanyName + " 下蛓 " + str(IndexPage) + " 頁，目前時間 " + str(datetime.datetime.now()))
             IndexPage += 1

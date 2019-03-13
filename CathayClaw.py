@@ -27,7 +27,7 @@ CustomerTable = pandas.read_csv(DownloadPath + "\\Customer.csv", encoding="utf_8
 CustomerTable.set_index("ID", inplace=True, verify_integrity=True)
 CustomerTable.fillna("", inplace=True)
 
-ChromeDriver = WebDriver.Chrome("chromedriver.exe")
+ChromeDriver = WebDriver.Chrome("chromedriver_Cathay.exe")
 ChromeDriver.maximize_window()
 ChromeDriver.implicitly_wait(10)
 
