@@ -27,14 +27,14 @@ StartTime = datetime.datetime.now()
 ChromeOptions = WebDriver.ChromeOptions()
 ChromeOptions.add_experimental_option("prefs", {"plugins.plugins_list": [{"enabled": False, "name": "Chrome PDF Viewer"}], "download.default_directory": DownloadPath})
 
-FileError = open("TIIClawError.log", mode="w", encoding="UTF-8")
+FileError = open("ErrorTIIClaw.log", mode="w", encoding="UTF-8")
 FileError.close()
-DownloadTable = pandas.read_csv(DownloadPath + "\\DLHistory.csv", encoding="utf_8_sig", quoting=1, dtype=numpy.str)
+DownloadTable = pandas.read_csv("TableDLHistory.csv", encoding="utf_8_sig", quoting=1, dtype=numpy.str)
 DownloadTable.set_index("TIISerial", inplace=True, verify_integrity=True)
 
 ChromeDriver = WebDriver.Chrome("chromedriver_TII.exe", options=ChromeOptions)
 ChromeDriver.maximize_window()
-ChromeDriver.implicitly_wait(5)
+# ChromeDriver.implicitly_wait(5)
 ChromeDriver.get("http://insprod.tii.org.tw/database/insurance/query.asp")
 
 CompanySelect = WebUI.Select(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td[1]/table[3]/tbody/tr/td/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td[2]/table/tbody/tr[2]/td/table/tbody/tr/td[2]/select"))
@@ -47,6 +47,17 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
     # 篩選壽險
     if not os.path.exists(DownloadPath + "\\" + CompanyName):
         os.makedirs(DownloadPath + "\\" + CompanyName)
+
+    ChromeDriver.get("chrome://settings/clearBrowserData")
+    time.sleep(3)
+    ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ChromeDriver.find_element(WebBy.By.XPATH, "/html/body/settings-ui"))
+    ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.ID, "main"))
+    ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.CSS_SELECTOR, "settings-basic-page"))
+    ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.CSS_SELECTOR, "settings-privacy-page"))
+    ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.CSS_SELECTOR, "settings-clear-browsing-data-dialog"))
+    ClearButton = ClearButton.find_element(WebBy.By.ID, "clearBrowsingDataConfirm")
+    ClearButton.click()
+    time.sleep(15)
 
     IndexPage = 1
     while IndexPage > 0:
@@ -63,8 +74,8 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                     time.sleep(0.1)
             # 只下載現售商品
             ImageTag = ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td[1]/table[3]/tbody/tr/td/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td[2]/table/tbody/tr[5]/td/img")
-            ChromeDriver.save_screenshot(DownloadPath + "\\ChromeScreen.png")
-            RGBOrigin = cv2.imread(DownloadPath + "\\ChromeScreen.png")
+            ChromeDriver.save_screenshot("ChromeScreen.png")
+            RGBOrigin = cv2.imread("ChromeScreen.png")
             RGBOrigin = RGBOrigin[ImageTag.location["y"] + 1: ImageTag.location["y"] + ImageTag.size["height"] - 1, ImageTag.location["x"] + 1: ImageTag.location["x"] + ImageTag.size["width"] - 1]
             RGBBlurred = cv2.cvtColor(RGBOrigin, cv2.IMREAD_GRAYSCALE)
             RGBBlurred = cv2.medianBlur(RGBBlurred, 5)
@@ -133,14 +144,14 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                 try:
                     ProvisionTag = ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td/table[3]/tbody/tr/td/table[1]/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[19]/td/table/tbody/tr/td/a")
                 except Exception as exception:
-                    with open("TIIClawError.log", mode="a", encoding="UTF-8") as FileError:
+                    with open("ErrorTIIClaw.log", mode="a", encoding="UTF-8") as FileError:
                         FileError.write("無條款 " + CompanyName + "\\" + ProductName + "\n")
 
                 if ProvisionTag:
                     ProvisionFileName = ProvisionTag.text
                     ProvisionTag.click()
                     if len(ChromeDriver.find_elements(WebBy.By.ID, "printContext")) == 0:
-                        with open("TIIClawError.log", mode="a", encoding="UTF-8") as FileError:
+                        with open("ErrorTIIClaw.log", mode="a", encoding="UTF-8") as FileError:
                             FileError.write("無連結 " + CompanyName + "\\" + ProductName + "\n")
                         continue
                     ProvisionFileExists = False
@@ -152,14 +163,13 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                             DownloadTable.loc[TIISerial] = [CompanyName, ProductName, LaunchDate, CloseDate]
                             break
                     if not ProvisionFileExists:
-                        with open("TIIClawError.log", mode="a", encoding="UTF-8") as FileError:
+                        with open("ErrorTIIClaw.log", mode="a", encoding="UTF-8") as FileError:
                             FileError.write("下載失敗 " + CompanyName + "\\" + ProductName + ".pdf\n")
                 # 下載處理
                 time.sleep(0.1)
             # 下載當頁所有商品
             DownloadTable.sort_index(inplace=True)
-            DownloadTable.to_csv("DLHistory.csv", encoding="utf_8_sig", quoting=1)
-            DownloadTable.to_csv(DownloadPath + "\\DLHistory.csv", encoding="utf_8_sig", quoting=1)
+            DownloadTable.to_csv("TableDLHistory.csv", encoding="utf_8_sig", quoting=1)
             print(CompanyName + " 下蛓 " + str(IndexPage) + " 頁，目前時間 " + str(datetime.datetime.now()))
             IndexPage += 1
         # 下載
