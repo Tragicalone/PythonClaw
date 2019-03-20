@@ -16,6 +16,7 @@ git clone https://github.com/Tragicalone/PythonClaw.git             <--- 複製 
 git remote add origin https://github.com/Tragicalone/PythonClaw.git <--- 設定 Tragicalone/PythonClaw 的簡寫為 origin
 git remote remove origin                                            <--- 移除 origin 的簡寫
 git push -u origin master                                           <--- 將目前的 master 分支上傳至 origin
+git push https://github.com/Tragicalone/PythonClaw.git master       <--- 將目前的 master 分支上傳
 git remote -v                                                       <--- 檢查 GitHub 簡寫設定
 git add 檔案名                                                      <--- 將檔案加入 Git 追蹤
 git commit -m "訊息"                                                <--- 同意檔案的變更並加註訊息 
