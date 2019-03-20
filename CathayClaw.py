@@ -12,15 +12,10 @@ import selenium.webdriver.support.ui as WebUI
 import selenium.webdriver.common.action_chains as WebAction
 import selenium.webdriver.support.expected_conditions as WebConditions
 
-
-
-StartTime = datetime.datetime.now()
 pytesseract.pytesseract.tesseract_cmd = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-NumberMapDict = {Key + 12: Value for Key, Value in {32: " ", 40: "(", 41: ")", 45: "-", 48: "0", 49: "1", 50: "2", 51: "3", 52: "4", 53: "5", 54: "6", 55: "7", 56: "8", 57: "9", 70: "F"}.items()}
-CustomerTable = pandas.read_csv("TableCustomer.csv", index_col="ID", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
-PolicyTable = pandas.read_csv("TablePolicy.csv", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
 ChromeDriver = WebDriver.Chrome("chromedriver_Cathay.exe")
 ChromeDriver.maximize_window()
+print("程式開始 ", datetime.datetime.now())
 # 登入金控
 if True:
     ChromeDriver.get("https://w3.cathaylife.com.tw")
@@ -34,20 +29,21 @@ if True:
 # 登入金控
 # 進保戶關係管理系統
 if True:
-    time.sleep(5)
+    time.sleep(0.1)
     ChromeDriver.execute_script(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='idx_menu']/ul[2]/li[4]/ul/li[3]/ul/li[2]/a").get_attribute("onclick"))
-    time.sleep(5)
+    time.sleep(10)
     ChromeDriver.switch_to.window(ChromeDriver.window_handles[1])
     ChromeDriver.close()
     ChromeDriver.switch_to.window(ChromeDriver.window_handles[1])
 # 進保戶關係管理系統
-# 重讀所有保戶
-if 1 == 0:
-    CustomerTable = CustomerTable[0:0]
+# 重讀保戶總表
+if 1 == 1:
+    CustomerTable = pandas.read_csv("TableCustomer.csv", index_col="ID", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
+    CustomerTable = CustomerTable[CustomerTable.index != CustomerTable.index]
     ChromeDriver.switch_to.default_content()
     ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
     ChromeDriver.find_element(WebBy.By.XPATH, "/html/body/table[1]/tbody/tr[2]/td[1]/input").click()
-    time.sleep(1)
+    time.sleep(0.1)
     ChromeDriver.switch_to.default_content()
     ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
     ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
@@ -67,9 +63,12 @@ if 1 == 0:
         CustomerTable.loc[CustomerID] = [CustomerName, CustomerBirth, CustomerTel, "", ""]
     CustomerTable.sort_index(inplace=True)
     CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
-# 重讀所有保戶
+# 重讀保戶總表
+print("重讀保戶總表 ", datetime.datetime.now())
 # 讀取保戶情報
-if 1 == 0:
+if 1 == 1:
+    NumberMapDict = {Key + 14: Value for Key, Value in {32: " ", 40: "(", 41: ")", 45: "-", 48: "0", 49: "1", 50: "2", 51: "3", 52: "4", 53: "5", 54: "6", 55: "7", 56: "8", 57: "9", 70: "F"}.items()}
+    CustomerTable = pandas.read_csv("TableCustomer.csv", index_col="ID", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
     for CustomerID in CustomerTable.index:
         [CustomerName, CustomerBirth, CustomerTel, CustomerAddress, CustomerFamilyHead] = CustomerTable.loc[CustomerID]
         CustomerTel = [] if CustomerTel == "" else CustomerTel.split(";")
@@ -129,8 +128,12 @@ if 1 == 0:
         CustomerTable.sort_index(inplace=True)
         CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
 # 讀取保戶情報
+print("讀取保戶情報 ", datetime.datetime.now())
 # 讀取保單健檢
 if 1 == 1:
+    PolicyTable = pandas.read_csv("TablePolicy.csv", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
+    PolicyTable = PolicyTable[PolicyTable.index != PolicyTable.index]
+    CustomerTable = pandas.read_csv("TableCustomer.csv", index_col="ID", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
     IndexFamily = 0
     ChromeDriver.switch_to.default_content()
     ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[1]"))
@@ -140,13 +143,13 @@ if 1 == 1:
         ChromeDriver.switch_to.alert.accept()
     except:
         ChromeDriver.switch_to.default_content()
-    time.sleep(1)
+    time.sleep(0.1)
     while True:
         # 列出所有家庭
         ChromeDriver.switch_to.default_content()
         ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
         ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='aspnetForm']/table/tbody/tr/td[2]/table/tbody/tr[1]/td[2]/input").click()
-        time.sleep(1)
+        time.sleep(0.1)
         # 列出所有家庭
         # 點選最新家庭
         ChromeDriver.switch_to.default_content()
@@ -157,7 +160,7 @@ if 1 == 1:
         FamilyTagList[IndexFamily].click()
         WebUI.WebDriverWait(ChromeDriver, 10).until(WebConditions.alert_is_present())
         ChromeDriver.switch_to.alert.accept()
-        time.sleep(1)
+        time.sleep(0.1)
         # 點選最新家庭
         # 讀取家庭成員資料
         CustomerRowList = ChromeDriver.find_elements(WebBy.By.XPATH, "//*[@id='ctl00_ctl00_HeaderContentHolder_PageContentHolder_FamilyMembersViewControl1_FamilyMembersGrid']/tbody/tr")
@@ -181,14 +184,14 @@ if 1 == 1:
         ChromeDriver.switch_to.default_content()
         ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
         ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='ctl00_ctl00_HeaderContentHolder_Menu']/table[2]/tbody/tr/td[2]/a").click()
-        time.sleep(3)
+        time.sleep(0.1)
         # 點選契約內容
         # 讀取契約內容
         ChromeDriver.switch_to.default_content()
         ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
         PolicyRowList = ChromeDriver.find_elements(WebBy.By.XPATH, "//*[@id='aspnetForm']/table[2]/tbody/tr/td[2]/table[1]/tbody/tr[2]/td/table/tbody/tr")
         if len(PolicyRowList) > 0:
-            LoadPolicyList = PolicyTable[PolicyTable.Company != PolicyTable.Company]
+            LoadPolicyList = PolicyTable[PolicyTable.index != PolicyTable.index]
             PolicyRowList.pop(0)
             InsuredID = ""
             for PolicyRow in PolicyRowList:
@@ -235,4 +238,6 @@ if 1 == 1:
         CustomerTable.sort_index(inplace=True)
         CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
 # 讀取保單健檢
+print("讀取保單健檢 ", datetime.datetime.now())
 ChromeDriver.quit()
+print("程式結束 ", datetime.datetime.now())
