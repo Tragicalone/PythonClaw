@@ -170,7 +170,6 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
             # 下載當頁所有商品
             DownloadTable.sort_index(inplace=True)
             DownloadTable.to_csv("TableDLHistory.csv", encoding="utf_8_sig", quoting=1)
-            print(CompanyName + " 下蛓 " + str(IndexPage) + " 頁，目前時間 " + str(datetime.datetime.now()))
             IndexPage += 1
         # 下載
     print("已下蛓 " + CompanyName + " 目前使用 " + str((datetime.datetime.now() - StartTime).total_seconds()) + " 秒")
