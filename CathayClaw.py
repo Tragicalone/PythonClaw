@@ -24,7 +24,7 @@ while True:
         break
 # 登入金控 End
 # 重讀保戶總表情報 Begin
-if 1 == 0:
+if 1 == 1:
     # 進保戶關係管理系統 Begin
     ChromeDriver.execute_script(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='idx_menu']/ul[2]/li[4]/ul/li[3]/ul/li[2]/a").get_attribute("onclick"))
     time.sleep(10)
@@ -55,17 +55,17 @@ if 1 == 0:
             CustomerTel = CustomerMob
         CustomerBirth = [int(Date) for Date in CustomerRowTag.find_element(WebBy.By.XPATH, "td[9]/div").text.split("/")]
         CustomerBirth = CustomerBirth[0] * 10000 + CustomerBirth[1] * 100 + CustomerBirth[2] + 19110000
-        CustomerTable.loc[CustomerID] = [CustomerName, CustomerBirth, CustomerTel, "", ""]
+        CustomerTable.loc[CustomerID, ["Name", "Birthday", "Telephone"]] = [CustomerName, CustomerBirth, CustomerTel]
     CustomerTable.sort_index(inplace=True)
     CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
     # 所有客戶列表 End
     # 逐一客戶情報 Begin
-    # Tue 12 Wed 14 Thu 16 Mon 7 Tue 9
-    NumberMapDict = {Key + 9: Value for Key, Value in {32: " ", 40: "(", 41: ")", 45: "-", 48: "0", 49: "1", 50: "2", 51: "3", 52: "4", 53: "5", 54: "6", 55: "7", 56: "8", 57: "9", 70: "F"}.items()}
+    # Tue 12 Wed 14 Thu 16 Mon 7 Tue 9 Mon 14 Tue 16
+    NumberMapDict = {Key + 16: Value for Key, Value in {32: " ", 40: "(", 41: ")", 45: "-", 48: "0", 49: "1", 50: "2", 51: "3", 52: "4", 53: "5", 54: "6", 55: "7", 56: "8", 57: "9", 70: "F"}.items()}
     for CustomerID in CustomerTable.index:
-        [CustomerName, CustomerBirth, CustomerTel, CustomerAddress, CustomerFamilyHead] = CustomerTable.loc[CustomerID]
+        [CustomerName, CustomerBirth, CustomerTel] = CustomerTable.loc[CustomerID, ["Name", "Birthday", "Telephone"]]
         CustomerTel = [] if CustomerTel == "" else CustomerTel.split(";")
-        CustomerAddress = [] if CustomerAddress == "" else CustomerAddress.split(";")
+        CustomerAddress = []
         # 回 CRM 首頁 Begin
         ChromeDriver.refresh()
         time.sleep(0.1)
@@ -99,7 +99,7 @@ if 1 == 0:
                     Address = GoogleMapTagList[0].get_attribute("onclick")
                     Address = Address[Address.find("maps/search/") + 12: Address.find("','popup'")]
                     Address = Address.replace("1", "１").replace("2", "２").replace("3", "３").replace("4", "４").replace("5", "５").replace("6", "６").replace("7", "７").replace("8", "８").replace("9", "９").replace("0", "０")
-                    CustomerAddress.append(Address)
+                    CustomerAddress.append(CellText + "：" + Address)
                 elif len(GoogleMapTagList) > 0:
                     raise Exception()
             elif re.match(".*(電話|手機).*", CellText) and not re.match(".*(電話行銷).*", CellText):
@@ -115,12 +115,14 @@ if 1 == 0:
         # 讀取客戶資料 End
         CustomerTel = ";".join(set(CustomerTel))
         CustomerAddress = ";".join(set(CustomerAddress))
-        CustomerTable.loc[CustomerID] = [CustomerName, CustomerBirth, CustomerTel, CustomerAddress, CustomerFamilyHead]
-    CustomerTable.sort_index(inplace=True)
-    CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
+        CustomerTable.loc[CustomerID, ["Name", "Birthday", "Telephone", "Address"]] = [CustomerName, CustomerBirth, CustomerTel, CustomerAddress]
+        CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
     # 逐一客戶情報 End
     # 關閉戶關係管理系統 Begin
+    CustomerTable.sort_index(inplace=True)
+    CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
     ChromeDriver.close()
+    ChromeDriver.switch_to.window(ChromeDriver.window_handles[0])
     # 關閉戶關係管理系統 End
 # 重讀保戶總表情報 End
 print("重讀保戶總表情報 ", datetime.datetime.now())
@@ -176,11 +178,12 @@ if 1 == 1:
             CustomerID = CustomerID[: 10]
             [CustomerName, CustomerBirth, CustomerTel, CustomerAddress] = [[], [], [], []]
             if CustomerID in CustomerTable.index:
-                [CustomerName, CustomerBirth, CustomerTel, CustomerAddress, CustomerFamilyHead] = [[] if Value == "" else Value.split(";") for Value in CustomerTable.loc[CustomerID]]
+                [CustomerName, CustomerBirth, CustomerTel, CustomerAddress] = [[] if Value == "" else Value.split(";") for Value in CustomerTable.loc[CustomerID, ["Name", "Birthday", "Telephone", "Address"]]]
             CustomerName.append(CustomerRow.find_element(WebBy.By.XPATH, "td[2]").text)
             CustomerBirthDate = [int(Date) for Date in CustomerRow.find_element(WebBy.By.XPATH, "td[5]").text.split("/")]
             CustomerBirth.append(str(CustomerBirthDate[0] * 10000 + CustomerBirthDate[1] * 100 + CustomerBirthDate[2] + 19110000))
-            CustomerTable.loc[CustomerID] = [";".join(set(Value)) for Value in [CustomerName, CustomerBirth, CustomerTel, CustomerAddress, {FamilyHead}]]
+            [CustomerName, CustomerBirth, CustomerTel, CustomerAddress] = [";".join(set(Value)) for Value in [CustomerName, CustomerBirth, CustomerTel, CustomerAddress]]
+            CustomerTable.loc[CustomerID] = [CustomerName, CustomerBirth, CustomerTel, CustomerAddress, FamilyHead]
         CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
         # 讀取家庭成員資料 End
         # 進入契約內容頁 Begin
@@ -214,7 +217,7 @@ if 1 == 1:
                     Relation = PolicyRow.find_element(WebBy.By.XPATH, "td[4]").text
                     EffectiveDate = [int(Date) for Date in PolicyRow.find_element(WebBy.By.XPATH, "td[5]").text.split("/")]
                     EffectiveDate = EffectiveDate[0] * 10000 + EffectiveDate[1] * 100 + EffectiveDate[2] + 19110000
-                    SumAssured = PolicyRow.find_element(WebBy.By.XPATH, "td[6]").text.replace("\n", ";")
+                    SumAssured = PolicyRow.find_element(WebBy.By.XPATH, "td[6]").text.replace("\n", " ")
                     PayPremium = PolicyRow.find_element(WebBy.By.XPATH, "td[7]").text
                     PayType = PolicyRow.find_element(WebBy.By.XPATH, "td[8]").text
                     Beneficiary = PolicyRow.find_element(WebBy.By.XPATH, "td[9]").text.replace("\n", ";")
@@ -232,7 +235,7 @@ if 1 == 1:
                             PayRoute = PayPremium.replace("\n", "")
                             PayPremium = ""
                     Occupation = ""
-                    PolicyValue = ""
+                    CRMPolicyValue = ""
                     ProductNameList = ProductName.split("\n")
                     ProductName = ProductNameList.pop(0)
                     if ProductName.startswith("    "):
@@ -241,12 +244,12 @@ if 1 == 1:
                         if Item.startswith("    職業類別："):
                             Occupation = Item[9:]
                         elif Item.startswith("保單價值:"):
-                            PolicyValue = Item[5:]
+                            CRMPolicyValue = Item[5:]
                         else:
                             print("未知的商品附註 " + Item)
-                    LoadPolicyList = LoadPolicyList.append(pandas.Series(["國泰人壽", InsuredID, InsuredName,  PolicyNumber, OwnerName,  ProductName,  PayTerm,  Relation,  EffectiveDate,  SumAssured, Occupation, PolicyValue, PayPremium, PayType,  PayRoute,  Beneficiary], index=LoadPolicyList.columns), ignore_index=True)
+                    LoadPolicyList = LoadPolicyList.append(pandas.Series(["國泰人壽", InsuredID, InsuredName, PolicyNumber, OwnerName, ProductName, PayTerm, Relation, EffectiveDate, SumAssured, Occupation, CRMPolicyValue, PayPremium, PayType, PayRoute, Beneficiary, 0, 0, 0, 0], index=LoadPolicyList.columns), ignore_index=True)
             # 讀取國泰契約內容 End
-            # 讀取他家公司契約內容
+            # 讀取他家公司契約內容 Begin
             elif TagTable.find_element(WebBy.By.XPATH, "span").text == "其他保單":
                 PolicyRowList = TagTable.find_elements(WebBy.By.XPATH, "table/tbody/tr")
                 PolicyRowList.pop(0)
@@ -268,7 +271,7 @@ if 1 == 1:
                     Relation = PolicyRow.find_element(WebBy.By.XPATH, "td[4]").text
                     EffectiveDate = [int(Date) for Date in PolicyRow.find_element(WebBy.By.XPATH, "td[5]").text.split("/")]
                     EffectiveDate = EffectiveDate[0] * 10000 + EffectiveDate[1] * 100 + EffectiveDate[2] + 19110000
-                    SumAssured = PolicyRow.find_element(WebBy.By.XPATH, "td[6]").text.replace("\n", ";")
+                    SumAssured = PolicyRow.find_element(WebBy.By.XPATH, "td[6]").text.replace("\n", " ")
                     PayPremium = PolicyRow.find_element(WebBy.By.XPATH, "td[7]").text
                     PayType = PolicyRow.find_element(WebBy.By.XPATH, "td[8]").text
                     DeathBeneficiary = PolicyRow.find_element(WebBy.By.XPATH, "td[9]").text
@@ -292,7 +295,7 @@ if 1 == 1:
                         OwnerName = ProductName[6: IndexString]
                         ProductName = ProductName[IndexString + 1:]
                     Occupation = ""
-                    PolicyValue = ""
+                    CRMPolicyValue = ""
                     ProductNameList = ProductName.split("\n")
                     ProductName = ProductNameList.pop(0)
                     if ProductName.startswith("    "):
@@ -301,20 +304,21 @@ if 1 == 1:
                         if Item.startswith("    職業類別："):
                             Occupation = Item[9:]
                         elif Item.startswith("保單價值:"):
-                            PolicyValue = Item[5:]
+                            CRMPolicyValue = Item[5:]
                         else:
                             print("未知的商品附註 " + Item)
-                    LoadPolicyList = LoadPolicyList.append(pandas.Series([Company, InsuredID, InsuredName,  PolicyNumber, OwnerName,  ProductName,  PayTerm,  Relation,  EffectiveDate,  SumAssured, Occupation, PolicyValue, PayPremium, PayType,  PayRoute,  Beneficiary], index=LoadPolicyList.columns), ignore_index=True)
-            # 讀取他家公司契約內容
+                    LoadPolicyList = LoadPolicyList.append(pandas.Series([Company, InsuredID, InsuredName,  PolicyNumber, OwnerName,  ProductName,  PayTerm,  Relation, EffectiveDate,  SumAssured, Occupation, CRMPolicyValue, PayPremium, PayType,  PayRoute,  Beneficiary, 0, 0, 0, 0], index=LoadPolicyList.columns), ignore_index=True)
+            # 讀取他家公司契約內容 End
         for [Company, InsuredID, PolicyNumber] in LoadPolicyList.groupby(["Company", "InsuredID", "PolicyNumber"]).indices:
             PolicyTable = PolicyTable[~((PolicyTable.Company == Company) & (PolicyTable.InsuredID == InsuredID) & (PolicyTable.PolicyNumber == PolicyNumber))]
         PolicyTable = PolicyTable.append(LoadPolicyList, ignore_index=True)
         PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
         IndexFamily += 1
-    # 關閉戶關係管理系統
+    # 關閉戶關係管理系統 Begin
     ChromeDriver.close()
-    # 關閉戶關係管理系統
-    # 補要保人
+    ChromeDriver.switch_to.window(ChromeDriver.window_handles[0])
+    # 關閉戶關係管理系統 End
+    # 補要保人 Begin
     GroupTable = pandas.DataFrame(list(PolicyTable[PolicyTable.OwnerName != ""].groupby(["Company", "PolicyNumber", "OwnerName"]).indices.keys()), columns=["Company", "PolicyNumber", "OwnerName"])
     CheckTable = GroupTable.groupby(["Company", "PolicyNumber"]).count()
     if not CheckTable[CheckTable.OwnerName > 1].empty:
@@ -322,12 +326,80 @@ if 1 == 1:
     for IndexGroup in GroupTable.index:
         [Company, PolicyNumber, OwnerName] = GroupTable.loc[IndexGroup]
         PolicyTable.loc[(PolicyTable.Company == Company) & (PolicyTable.PolicyNumber == PolicyNumber), "OwnerName"] = OwnerName
-    # 補要保人
+    # 補要保人 End
     CustomerTable.sort_index(inplace=True)
     CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
     PolicyTable.sort_values(by=["InsuredID", "Company", "PolicyNumber"], inplace=True)
     PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
-# 讀取保單健檢
+# 讀取保單健檢 End
 print("讀取保單健檢 ", datetime.datetime.now())
+# 讀取核心契約情報 Begin
+if 1 == 0:
+    # 進解約查詢 Begin
+    ChromeDriver.execute_script(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='idx_menu']/ul[2]/li[3]/ul/li[2]/a").get_attribute("onclick"))
+    time.sleep(0.1)
+    ChromeDriver.switch_to.window(ChromeDriver.window_handles[1])
+    ChromeDriver.switch_to.default_content()
+    ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frameset/frame"))
+    ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='showMainMenu']/li[1]").click()
+    time.sleep(0.1)
+    ChromeDriver.switch_to.default_content()
+    ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
+    if ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='menutree']/ul/li[2]").text != "整合內容查詢":
+        raise Exception()
+    ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='menutree']/ul/li[3]").click()
+    time.sleep(0.1)
+    ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='menutree']/ul/li[3]/ul/li[3]/a").click()
+    # 進解約查詢 End
+    PolicyTable = pandas.read_csv("TablePolicy.csv", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
+    for IndexPolicy in PolicyTable.index:
+        [Company, PolicyNumber, ProductName] = PolicyTable.loc[IndexPolicy, ["Company", "PolicyNumber", "ProductName"]]
+        if Company != "國泰人壽" or ProductName.startswith("(附約)"):
+            continue
+        ChromeDriver.switch_to.default_content()
+        ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
+        ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='menutree']/ul/li[3]/ul/li[3]/a").click()
+        time.sleep(3)
+        ChromeDriver.switch_to.default_content()
+        ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
+        ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.ID, "mainFrame"))
+        ChromeDriver.find_element(WebBy.By.ID, "POLICY_NO").send_keys(PolicyNumber)
+        time.sleep(0.1)
+        ChromeDriver.find_element(WebBy.By.ID, "btnTrial").click()
+        time.sleep(0.1)
+        ChromeDriver.switch_to.default_content()
+        ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
+        ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.ID, "mainFrame"))
+        CellList = ChromeDriver.find_elements(WebBy.By.XPATH, "//*[@id='form1']/table[6]/tbody/tr/td")
+        [Bonus, PolicyValue, CashValue, Loan] = [0, 0, 0, 0]
+        for IndexCell in range(len(CellList) - 1):
+            CellField = CellList[IndexCell].text
+            CellValue = CellList[IndexCell + 1].text.replace(",", "")
+            if CellField == "保單價值準備金":
+                PolicyValue = float(CellValue)
+            elif CellField == "主約解約金額":
+                CashValue = float(CellValue)
+            elif CellField == "紅利金額":
+                Bonus = float(CellValue)
+            elif CellField == "借款金額":
+                Loan += float(CellValue)
+            elif CellField == "借款利息":
+                Loan += float(CellValue)
+            elif CellField == "借款延滯息":
+                Loan += float(CellValue)
+            elif CellField == "墊繳金額":
+                Loan += float(CellValue)
+            elif CellField == "墊繳利息	":
+                Loan += float(CellValue)
+        PolicyTable.loc[IndexPolicy, ["Bonus", "PolicyValue", "CashValue", "Loan"]] = [Bonus, PolicyValue, CashValue, Loan]
+        PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
+    PolicyTable.sort_values(by=["InsuredID", "Company", "PolicyNumber"], inplace=True)
+    PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
+    # 關閉壽險核心系統 Begin
+    ChromeDriver.close()
+    ChromeDriver.switch_to.window(ChromeDriver.window_handles[0])
+    # 關閉壽險核心系統 End
+# 讀取核心契約情報 End
+print("讀取核心契約情報 ", datetime.datetime.now())
 ChromeDriver.quit()
 print("程式結束 ", datetime.datetime.now())

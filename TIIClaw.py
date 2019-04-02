@@ -15,6 +15,7 @@ import selenium.webdriver.remote.webelement as WebElement
 import selenium.webdriver.support.expected_conditions as WebCondition
 
 
+
 pytesseract.pytesseract.tesseract_cmd = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 DownloadPath = os.path.abspath("..\\Box Sync\\TIIClawData")
 if not os.path.exists(DownloadPath):
@@ -34,20 +35,18 @@ DownloadTable.set_index("TIISerial", inplace=True, verify_integrity=True)
 
 ChromeDriver = WebDriver.Chrome("chromedriver_TII.exe", options=ChromeOptions)
 ChromeDriver.maximize_window()
-# ChromeDriver.implicitly_wait(5)
 ChromeDriver.get("http://insprod.tii.org.tw/database/insurance/query.asp")
 
 CompanySelect = WebUI.Select(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td[1]/table[3]/tbody/tr/td/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td[2]/table/tbody/tr[2]/td/table/tbody/tr/td[2]/select"))
 CompanyList = [option.text.replace("-", "_") for option in CompanySelect.options]
 
 for IndexCompany, CompanyName in enumerate(CompanyList):
-    # 篩選壽險
-    if int(CompanyName[0:3]) < 200:
+    # 篩選壽險 Begin
+    if int(CompanyName[0:3]) < 212:
         continue
-    # 篩選壽險
+    # 篩選壽險 End
     if not os.path.exists(DownloadPath + "\\" + CompanyName):
         os.makedirs(DownloadPath + "\\" + CompanyName)
-
     ChromeDriver.get("chrome://settings/clearBrowserData")
     time.sleep(3)
     ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ChromeDriver.find_element(WebBy.By.XPATH, "/html/body/settings-ui"))
@@ -58,21 +57,20 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
     ClearButton = ClearButton.find_element(WebBy.By.ID, "clearBrowsingDataConfirm")
     ClearButton.click()
     time.sleep(15)
-
     IndexPage = 1
     while IndexPage > 0:
-        # 破驗證碼
+        # 破驗證碼 Begin
         while True:
             ChromeDriver.get("http://insprod.tii.org.tw/database/insurance/query.asp")
             CompanySelect = WebUI.Select(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td[1]/table[3]/tbody/tr/td/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td[2]/table/tbody/tr[2]/td/table/tbody/tr/td[2]/select"))
             CompanySelect.select_by_index(IndexCompany)
-            # 只下載現售商品
+            # 只下載現售商品 Begin
             if False:
                 CurrentTag = ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td[1]/table[3]/tbody/tr/td/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td[2]/table/tbody/tr[3]/td/table/tbody/tr[3]/td[2]/label[2]/input[1]")
                 while not bool(CurrentTag.get_attribute("checked")):
                     CurrentTag.click()
                     time.sleep(0.1)
-            # 只下載現售商品
+            # 只下載現售商品 End
             ImageTag = ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td[1]/table[3]/tbody/tr/td/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td[2]/table/tbody/tr[5]/td/img")
             ChromeDriver.save_screenshot("ChromeScreen.png")
             RGBOrigin = cv2.imread("ChromeScreen.png")
@@ -93,21 +91,20 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
             except Exception as exception:
                 break
             time.sleep(0.1)
-        # 破驗證碼
-        # 下載
+        # 破驗證碼 End
+        # 下載 Begin
         while True:
             ChromeDriver.get("http://insprod.tii.org.tw/database/insurance/resultQueryAll.asp?page=" + str(IndexPage) + "&fQueryAll=&CompanyID=" + CompanyName[:3] + "&categoryId=")
-            # 驗證碼超時處理
+            # 驗證碼超時處理 Begin
             try:
                 WebUI.WebDriverWait(ChromeDriver, 3).until(WebCondition.alert_is_present())
                 ChromeDriver.switch_to.alert.accept()
                 break
             except Exception as exception:
                 time.sleep(0.1)
-            # 驗證碼超時處理
-
+            # 驗證碼超時處理 End
             ProductNameURLList = []
-            # 下載當頁所有商品 URL
+            # 下載當頁所有商品 URL Begin
             for ProductTag in ChromeDriver.find_elements(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td/table[3]/tbody/tr/td/table/tbody/tr[3]/td/table[2]/tbody/tr"):
                 if ProductTag.size["height"] < 2:
                     continue
@@ -117,36 +114,35 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                 ProductURL = ProductTag.find_element(WebBy.By.XPATH, "td[2]/a").get_attribute("href")
                 TIISerial = ProductURL[ProductURL.find("productId=") + 10:]
                 ProductNameURLList.append([ProductName, LaunchDate, CloseDate, TIISerial, ProductURL])
-            # 下載當頁所有商品 URL
+            # 下載當頁所有商品 URL End
             if len(ProductNameURLList) == 0:
                 IndexPage = -1
                 break
-            # 下載當頁所有商品
+            # 下載當頁所有商品 Begin
             for [ProductName, LaunchDate, CloseDate, TIISerial, ProductURL] in ProductNameURLList:
-                # 該 TIISerial 已下載
+                # 該 TIISerial 已下載 Begin
                 if TIISerial in DownloadTable.index:
                     Company = DownloadTable.loc[TIISerial]
                     os.rename(DownloadPath + "\\" + CompanyName + "\\" + TIISerial + "_" + Company.values[1][:20] + "_" + Company.values[2] + "_" + Company.values[3] + ".pdf", DownloadPath + "\\" + CompanyName + "\\" + TIISerial + "_" + ProductName[:20] + "_" + LaunchDate + "_" + CloseDate + ".pdf")
                     DownloadTable.loc[TIISerial] = [CompanyName, ProductName, LaunchDate, CloseDate]
                     continue
-                # 該 TIISerial 已下載
+                # 該 TIISerial 已下載 End
                 ChromeDriver.get(ProductURL)
-                # 驗證碼超時處理
+                # 驗證碼超時處理 Begin
                 try:
                     WebUI.WebDriverWait(ChromeDriver, 3).until(WebCondition.alert_is_present())
                     ChromeDriver.switch_to.alert.accept()
                     break
                 except Exception as exception:
                     time.sleep(0.1)
-                # 驗證碼超時處理
+                # 驗證碼超時處理 End
                 ProvisionTag = None
-                # 下載處理
+                # 下載處理 Begin
                 try:
                     ProvisionTag = ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='printContext']/table/tbody/tr/td/table[2]/tbody/tr/td/table[3]/tbody/tr/td/table[1]/tbody/tr[2]/td/table/tbody/tr/td/table/tbody/tr[19]/td/table/tbody/tr/td/a")
                 except Exception as exception:
                     with open("ErrorTIIClaw.log", mode="a", encoding="UTF-8") as FileError:
                         FileError.write("無條款 " + CompanyName + "\\" + ProductName + "\n")
-
                 if ProvisionTag:
                     ProvisionFileName = ProvisionTag.text
                     ProvisionTag.click()
@@ -165,14 +161,13 @@ for IndexCompany, CompanyName in enumerate(CompanyList):
                     if not ProvisionFileExists:
                         with open("ErrorTIIClaw.log", mode="a", encoding="UTF-8") as FileError:
                             FileError.write("下載失敗 " + CompanyName + "\\" + ProductName + ".pdf\n")
-                # 下載處理
+                # 下載處理 End
                 time.sleep(0.1)
-            # 下載當頁所有商品
+            # 下載當頁所有商品 End
             DownloadTable.sort_index(inplace=True)
             DownloadTable.to_csv("TableDLHistory.csv", encoding="utf_8_sig", quoting=1)
             IndexPage += 1
-        # 下載
-    print("已下蛓 " + CompanyName + " 目前使用 " + str((datetime.datetime.now() - StartTime).total_seconds()) + " 秒")
-
+        # 下載 End
+    print("已下蛓 ", CompanyName, " 目前時間", datetime.datetime.now(), " 共使用 ", (datetime.datetime.now() - StartTime).total_seconds(), " 秒")
 ChromeDriver.close()
-print("共使用 " + str((datetime.datetime.now() - StartTime).total_seconds()) + " 秒")
+print("共使用 ", (datetime.datetime.now() - StartTime).total_seconds(), " 秒")
