@@ -13,15 +13,15 @@ import selenium.webdriver.support.expected_conditions as WebConditions
 ChromeDriver = WebDriver.Chrome("chromedriver_Cathay.exe")
 ChromeDriver.maximize_window()
 print("程式開始 ", datetime.datetime.now())
-# 登入金控 Begin
-ChromeDriver.get("https://w3.cathaylife.com.tw")
-ChromeDriver.find_element(WebBy.By.ID, "UID").send_keys("A120923934")
-ChromeDriver.find_element(WebBy.By.ID, "KEY").send_keys("0938196099")
-ChromeDriver.find_element(WebBy.By.ID, "btnLogin").click()
-time.sleep(0.1)
-# 登入金控 End
 # 重讀保戶總表情報 Begin
 if 1 == 1:
+    # 登入金控 Begin
+    ChromeDriver.get("https://w3.cathaylife.com.tw")
+    ChromeDriver.find_element(WebBy.By.ID, "UID").send_keys("A120923934")
+    ChromeDriver.find_element(WebBy.By.ID, "KEY").send_keys("0938196099")
+    ChromeDriver.find_element(WebBy.By.ID, "btnLogin").click()
+    time.sleep(0.1)
+    # 登入金控 End
     # 進保戶關係管理系統 Begin
     ChromeDriver.execute_script(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='idx_menu']/ul[2]/li[4]/ul/li[3]/ul/li[2]/a").get_attribute("onclick"))
     time.sleep(10)
@@ -60,15 +60,17 @@ if 1 == 1:
     CustomerTable.to_csv("TableCustomer.csv", encoding="utf_8_sig", quoting=1)
     # 所有客戶列表 End
     # 逐一客戶情報 Begin
-    # Tue 12 Wed 14 Thu 16 Mon 7 Tue 9 Mon 14 Tue 16 Wed 8
-    NumberMapDict = {Key + 8: Value for Key, Value in {32: " ", 40: "(", 41: ")", 45: "-", 48: "0", 49: "1", 50: "2", 51: "3", 52: "4", 53: "5", 54: "6", 55: "7", 56: "8", 57: "9", 70: "F"}.items()}
+    #Mon 8 Tue 10 Wed 12 Thu 14 Fri 16 Sun 13 Mon 15
+    NumberMapDict = {Key + 7: Value for Key, Value in {32: " ", 40: "(", 41: ")", 45: "-", 48: "0", 49: "1", 50: "2", 51: "3", 52: "4", 53: "5", 54: "6", 55: "7", 56: "8", 57: "9", 70: "F"}.items()}
     for CustomerID in CustomerTable.index:
         [CustomerName, CustomerBirth, CustomerTel] = CustomerTable.loc[CustomerID, ["Name", "Birthday", "Telephone"]]
         CustomerTel = [] if CustomerTel == "" else CustomerTel.split(";")
         CustomerAddress = []
         # 回 CRM 首頁 Begin
-        ChromeDriver.refresh()
-        time.sleep(0.1)
+        ChromeDriver.switch_to.default_content()
+        ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[1]"))
+        ChromeDriver.find_element(WebBy.By.XPATH, "/html/body/table[1]/tbody/tr[3]/td/a[1]").click()
+        time.sleep(1)
         # 回 CRM 首頁 End
         # 指定客戶 ID Begin
         ChromeDriver.switch_to.default_content()
@@ -124,10 +126,6 @@ if 1 == 1:
     ChromeDriver.close()
     ChromeDriver.switch_to.window(ChromeDriver.window_handles[0])
     # 關閉戶關係管理系統 End
-# 重讀保戶總表情報 End
-print("重讀保戶總表情報 ", datetime.datetime.now())
-# 讀取保單健檢 Begin
-if 1 == 1:
     # 進保戶關係管理系統 Begin
     ChromeDriver.execute_script(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='idx_menu']/ul[2]/li[4]/ul/li[3]/ul/li[2]/a").get_attribute("onclick"))
     time.sleep(10)
@@ -153,10 +151,10 @@ if 1 == 1:
         ChromeDriver.switch_to.alert.accept()
     except:
         ChromeDriver.switch_to.default_content()
-    time.sleep(0.1)
     # 進保單健檢頁 End
     while True:
         # 點選最新家庭 Begin
+        time.sleep(1)
         ChromeDriver.switch_to.default_content()
         ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
         ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='aspnetForm']/table/tbody/tr/td[2]/table/tbody/tr[1]/td[2]/input").click()
@@ -338,6 +336,7 @@ if 1 == 1:
     PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
 # 讀取保單健檢 End
 print("讀取保單健檢 ", datetime.datetime.now())
+ChromeDriver.quit()
 # 讀取核心契約情報 Begin
 if 1 == 1:
     PolicyTable = pandas.read_csv("TablePolicy.csv", encoding="utf_8_sig", quoting=1, dtype=str).fillna("")
@@ -346,28 +345,16 @@ if 1 == 1:
             continue
         # 清 Catch Begin
         if IndexCount % 200 == 0:
-            if len(ChromeDriver.window_handles) > 2:
-                raise Exception()
-            elif len(ChromeDriver.window_handles) == 2:
-                ChromeDriver.close()
-                ChromeDriver.switch_to.window(ChromeDriver.window_handles[0])
-            ChromeDriver.get("chrome://settings/clearBrowserData")
-            time.sleep(0.1)
-            ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ChromeDriver.find_element(WebBy.By.XPATH, "/html/body/settings-ui"))
-            ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.ID, "main"))
-            ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.CSS_SELECTOR, "settings-basic-page"))
-            ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.CSS_SELECTOR, "settings-privacy-page"))
-            ClearButton = ChromeDriver.execute_script("return arguments[0].shadowRoot", ClearButton.find_element(WebBy.By.CSS_SELECTOR, "settings-clear-browsing-data-dialog"))
-            ClearButton = ClearButton.find_element(WebBy.By.ID, "clearBrowsingDataConfirm")
-            ClearButton.click()
-            time.sleep(10)
+            ChromeDriver.quit()
+            ChromeDriver = WebDriver.Chrome("chromedriver_Cathay.exe")
+            ChromeDriver.maximize_window()
             ChromeDriver.get("https://w3.cathaylife.com.tw")
             ChromeDriver.find_element(WebBy.By.ID, "UID").send_keys("A120923934")
             ChromeDriver.find_element(WebBy.By.ID, "KEY").send_keys("0938196099")
             ChromeDriver.find_element(WebBy.By.ID, "btnLogin").click()
             time.sleep(0.1)
             ChromeDriver.execute_script(ChromeDriver.find_element(WebBy.By.XPATH, "//*[@id='idx_menu']/ul[2]/li[3]/ul/li[2]/a").get_attribute("onclick"))
-            time.sleep(1)
+            time.sleep(3)
             ChromeDriver.switch_to.window(ChromeDriver.window_handles[1])
             ChromeDriver.switch_to.default_content()
             ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frameset/frame"))
@@ -394,6 +381,14 @@ if 1 == 1:
         time.sleep(0.1)
         ChromeDriver.find_element(WebBy.By.ID, "btnTrial").click()
         time.sleep(0.1)
+
+        try:
+            WebUI.WebDriverWait(ChromeDriver, 10).until(WebConditions.alert_is_present())
+            ChromeDriver.switch_to.alert.accept()
+            continue
+        except:
+            ChromeDriver.switch_to.default_content()
+
         ChromeDriver.switch_to.default_content()
         ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.XPATH, "/html/frameset/frame[2]"))
         ChromeDriver.switch_to.frame(ChromeDriver.find_element(WebBy.By.ID, "mainFrame"))
@@ -422,12 +417,7 @@ if 1 == 1:
         PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
     PolicyTable.sort_values(by=["InsuredID", "Company", "PolicyNumber"], inplace=True)
     PolicyTable.to_csv("TablePolicy.csv", index=False, encoding="utf_8_sig", quoting=1)
-    if len(ChromeDriver.window_handles) > 2:
-        raise Exception()
-    elif len(ChromeDriver.window_handles) == 2:
-        ChromeDriver.close()
-        ChromeDriver.switch_to.window(ChromeDriver.window_handles[0])
+    ChromeDriver.quit()
 # 讀取核心契約情報 End
 print("讀取核心契約情報 ", datetime.datetime.now())
-ChromeDriver.quit()
 print("程式結束 ", datetime.datetime.now())

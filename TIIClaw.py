@@ -15,7 +15,6 @@ import selenium.webdriver.remote.webelement as WebElement
 import selenium.webdriver.support.expected_conditions as WebCondition
 
 
-
 pytesseract.pytesseract.tesseract_cmd = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 DownloadPath = os.path.abspath("..\\Box Sync\\TIIClawData")
 if not os.path.exists(DownloadPath):
@@ -42,7 +41,7 @@ CompanyList = [option.text.replace("-", "_") for option in CompanySelect.options
 
 for IndexCompany, CompanyName in enumerate(CompanyList):
     # 篩選壽險 Begin
-    if int(CompanyName[0:3]) < 212:
+    if int(CompanyName[0:3]) < 200:
         continue
     # 篩選壽險 End
     if not os.path.exists(DownloadPath + "\\" + CompanyName):

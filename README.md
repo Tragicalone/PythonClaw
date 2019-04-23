@@ -31,5 +31,12 @@ git merge --no-ff -m "Accept message" TheBranch
 
 #Jupyter
 pip install "ipython[notebook]"   <--- 安裝 Jupyter
-pip install opencv-python         <--- 安裝 OpenCV
 jupyter notebook                  <--- 於目前目錄啟動 Jupyter Service
+
+# Extensions
+pip install pandas                <--- 安裝 Pandas
+pip install pytesseract           <--- 安裝 pytesseract
+pip install opencv-python         <--- 安裝 OpenCV
+pip install selenium              <--- 安裝 selenium
+pip install Pillow                <--- 安裝 pil
+
